@@ -1,0 +1,380 @@
+[MainThread] - 2025-06-17 20:42:43,237 - INFO - Logging configurado com sucesso.
+[MainThread] - 2025-06-17 20:42:52,256 - INFO - Iniciando o processo de extração de dados de royalties.
+[MainThread] - 2025-06-17 20:42:52,257 - INFO -  Iniciando extração paralela com 3 workers para 12 meses/anos.
+[MainThread] - 2025-06-17 20:42:52,259 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:42:52,261 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:42:52,265 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:42:55,951 - ERROR -  Erro no worker para 01/2014: File is not a zip file
+[MainThread] - 2025-06-17 20:42:55,954 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:42:56,642 - ERROR -  Erro no worker para 03/2014: [WinError 183] Não é possível criar um arquivo já existente: 'C:\\Users\\user\\.wdm\\drivers\\chromedriver\\win64\\137.0.7151.119\\chromedriver-win32'
+[MainThread] - 2025-06-17 20:42:56,645 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:43:19,048 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:19,066 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:19,067 - INFO -  Iniciando extração para 05/2014
+[MainThread] - 2025-06-17 20:43:19,585 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:19,603 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:19,605 - INFO -  Iniciando extração para 02/2014
+[MainThread] - 2025-06-17 20:43:19,888 - INFO - Filtro para 05/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:43:19,889 - INFO -  Extraindo dados da página 1 para 05/2014...
+[MainThread] - 2025-06-17 20:43:20,350 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:20,372 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:43:20,373 - INFO -  Iniciando extração para 04/2014
+[MainThread] - 2025-06-17 20:43:20,468 - INFO - Filtro para 02/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:43:20,471 - INFO -  Extraindo dados da página 1 para 02/2014...
+[MainThread] - 2025-06-17 20:43:21,110 - INFO - Filtro para 04/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:43:21,111 - INFO -  Extraindo dados da página 1 para 04/2014...
+[MainThread] - 2025-06-17 20:43:35,194 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:43:35,195 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:43:35,775 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:43:35,776 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:43:36,412 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:43:36,413 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:43:45,394 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:43:45,395 - INFO -  Nenhum dado de royalties encontrado para 05/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:43:45,971 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:43:45,972 - INFO -  Nenhum dado de royalties encontrado para 02/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:43:46,611 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:43:46,612 - INFO -  Nenhum dado de royalties encontrado para 04/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:43:48,184 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:43:48,185 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:43:48,930 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:44:08,132 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,153 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,154 - INFO -  Iniciando extração para 08/2014
+[MainThread] - 2025-06-17 20:44:08,159 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,177 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,178 - INFO -  Iniciando extração para 07/2014
+[MainThread] - 2025-06-17 20:44:08,606 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,623 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:08,623 - INFO -  Iniciando extração para 06/2014
+[MainThread] - 2025-06-17 20:44:08,973 - INFO - Filtro para 08/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:08,975 - INFO -  Extraindo dados da página 1 para 08/2014...
+[MainThread] - 2025-06-17 20:44:08,986 - INFO - Filtro para 07/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:08,987 - INFO -  Extraindo dados da página 1 para 07/2014...
+[MainThread] - 2025-06-17 20:44:09,356 - INFO - Filtro para 06/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:09,357 - INFO -  Extraindo dados da página 1 para 06/2014...
+[MainThread] - 2025-06-17 20:44:24,301 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:44:24,301 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:44:24,302 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:44:24,303 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:44:24,653 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:44:24,654 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:44:34,523 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:44:34,523 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:44:34,524 - INFO -  Nenhum dado de royalties encontrado para 08/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:44:34,524 - INFO -  Nenhum dado de royalties encontrado para 07/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:44:34,851 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:44:34,852 - INFO -  Nenhum dado de royalties encontrado para 06/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:44:37,301 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:44:37,301 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:44:37,302 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:44:56,691 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:56,701 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:56,709 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:56,710 - INFO -  Iniciando extração para 09/2014
+[MainThread] - 2025-06-17 20:44:56,720 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:56,721 - INFO -  Iniciando extração para 11/2014
+[MainThread] - 2025-06-17 20:44:57,501 - INFO - Filtro para 09/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:57,502 - INFO -  Extraindo dados da página 1 para 09/2014...
+[MainThread] - 2025-06-17 20:44:57,524 - INFO - Filtro para 11/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:57,525 - INFO -  Extraindo dados da página 1 para 11/2014...
+[MainThread] - 2025-06-17 20:44:57,823 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:57,838 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:44:57,839 - INFO -  Iniciando extração para 10/2014
+[MainThread] - 2025-06-17 20:44:59,083 - INFO - Filtro para 10/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:44:59,084 - INFO -  Extraindo dados da página 1 para 10/2014...
+[MainThread] - 2025-06-17 20:45:12,819 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:45:12,820 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:45:12,834 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:45:12,835 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:45:14,381 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:45:14,383 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:45:23,030 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:45:23,031 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:45:23,031 - INFO -  Nenhum dado de royalties encontrado para 11/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:45:23,032 - INFO -  Nenhum dado de royalties encontrado para 09/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:45:24,571 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:45:24,572 - INFO -  Nenhum dado de royalties encontrado para 10/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:45:25,812 - INFO -  Iniciando driver do Chrome...
+
+[MainThread] - 2025-06-17 20:46:12,617 - INFO - Aba Pagamentos selecionada com sucesso.
+
+[MainThread] - 2025-06-17 20:46:12,633 - INFO -  Página carregada com sucesso.
+
+[MainThread] - 2025-06-17 20:46:12,634 - INFO -  Iniciando extração para 12/2014
+[MainThread] - 2025-06-17 20:46:13,881 - INFO - Filtro para 12/2014 aplicado e carregamento concluído.
+[MainThread] - 2025-06-17 20:46:13,882 - INFO -  Extraindo dados da página 1 para 12/2014...
+[MainThread] - 2025-06-17 20:46:29,173 - CRITICAL - Erro GERAL e FATAL na função extrair_dados_pagamentos: Message: 
+Stacktrace:
+	GetHandleVerifier [0x0x1063b03+62899]
+	GetHandleVerifier [0x0x1063b44+62964]
+	(No symbol) [0x0xe910f3]
+	(No symbol) [0x0xed980e]
+	(No symbol) [0x0xed9bab]
+	(No symbol) [0x0xf225c2]
+	(No symbol) [0x0xefe554]
+	(No symbol) [0x0xf1fd81]
+	(No symbol) [0x0xefe306]
+	(No symbol) [0x0xecd670]
+	(No symbol) [0x0xece4e4]
+	GetHandleVerifier [0x0x12c4793+2556483]
+	GetHandleVerifier [0x0x12bfd02+2537394]
+	GetHandleVerifier [0x0x108a2fa+220586]
+	GetHandleVerifier [0x0x107aae8+157080]
+	GetHandleVerifier [0x0x108141d+184013]
+	GetHandleVerifier [0x0x106ba68+95512]
+	GetHandleVerifier [0x0x106bc10+95936]
+	GetHandleVerifier [0x0x1056b5a+9738]
+	BaseThreadInitThunk [0x0x76e37ba9+25]
+	RtlInitializeExceptionChain [0x0x7752c28b+107]
+	RtlClearBits [0x0x7752c20f+191]
+
+[MainThread] - 2025-06-17 20:46:29,176 - INFO -  Nenhuns dados encontrados nesta página. Passando para a próxima ou finalizando.
+[MainThread] - 2025-06-17 20:46:39,374 - INFO - Botão 'Próximo' (<li>) não encontrado ou não presente/visível inicialmente.
+[MainThread] - 2025-06-17 20:46:39,376 - INFO -  Nenhum dado de royalties encontrado para 12/2014. Nenhum arquivo salvo.
+[MainThread] - 2025-06-17 20:46:42,166 - INFO -  Extração paralela concluída.
