@@ -1,0 +1,19 @@
+[MainThread] - 2025-07-11 19:01:50,746 - INFO - [processar_ano_em_paralelo] - --- INICIANDO PROCESSAMENTO PARALELO PARA O ANO DE 2018 ---
+[MainThread] - 2025-07-11 19:01:50,749 - INFO - [processar_ano_em_paralelo] - Fase 1: Coletando todos os links de detalhes...
+[MainThread] - 2025-07-11 19:01:50,753 - INFO - [start_driver] - Iniciando driver do Chrome...
+[MainThread] - 2025-07-11 19:02:08,167 - INFO - [selecionar_dropdown] - Selecionando: Pagamento
+[MainThread] - 2025-07-11 19:02:08,555 - INFO - [selecionar_dropdown] - Selecionando: 2018
+[MainThread] - 2025-07-11 19:02:20,692 - INFO - [processar_ano_em_paralelo] - Coletando links da página de resultados: 1
+[MainThread] - 2025-07-11 19:02:32,415 - INFO - [processar_ano_em_paralelo] - Fase 1 concluída. Total de 10 links de detalhes coletados.
+[MainThread] - 2025-07-11 19:02:46,572 - INFO - [processar_ano_em_paralelo] - Fase 2: Iniciando extração com 3 workers.
+[Worker-960] - 2025-07-11 19:03:01,930 - INFO - [worker_extrair_detalhes] - Worker iniciado. Processando 4 links.
+[Worker-960] - 2025-07-11 19:03:12,891 - INFO - [start_driver] - Iniciando driver do Chrome...
+[Worker-476] - 2025-07-11 19:03:24,766 - INFO - [worker_extrair_detalhes] - Worker iniciado. Processando 3 links.
+[Worker-712] - 2025-07-11 19:03:24,772 - INFO - [worker_extrair_detalhes] - Worker iniciado. Processando 3 links.
+[Worker-712] - 2025-07-11 19:03:30,217 - INFO - [start_driver] - Iniciando driver do Chrome...
+[Worker-476] - 2025-07-11 19:03:38,735 - INFO - [start_driver] - Iniciando driver do Chrome...
+[Worker-960] - 2025-07-11 19:04:16,682 - INFO - [worker_extrair_detalhes] - Worker finalizado.
+[Worker-476] - 2025-07-11 19:05:30,607 - INFO - [worker_extrair_detalhes] - Worker finalizado.
+[Worker-712] - 2025-07-11 19:05:32,821 - INFO - [worker_extrair_detalhes] - Worker finalizado.
+[MainThread] - 2025-07-11 19:05:37,837 - INFO - [processar_ano_em_paralelo] - Nenhum registro de royalties foi extraído.
+[MainThread] - 2025-07-11 19:05:37,838 - INFO - [processar_ano_em_paralelo] - --- FINALIZADO PROCESSAMENTO DE 2018 ---
