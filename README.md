@@ -12,8 +12,8 @@ A arquitetura foi projetada para ser modular, escalável e de fácil manutençã
 * **Arquitetura Modular:** Cada tipo de portal (ex: Serigy, Ágape) possui seu próprio módulo de scraper, facilitando a manutenção e expansão.
 * **Execução Paralela:** Utiliza múltiplas threads para processar diferentes tarefas (meses ou anos) simultaneamente, acelerando drasticamente o tempo total da extração.
 * **Logging Detalhado:** Gera logs de execução consolidados e identificados por tarefa, facilitando a depuração e o monitoramento.
-* 🔶**(Em Desenvolvimento...) Extração Parametrizada:** Controle quais cidades e anos devem ser processados através de um único arquivo de configuração (`config.json`).
-* 🔶**(Em Desenvolvimento...) Ambiente Containerizado:** Empacotado com Docker para garantir um ambiente de execução consistente e eliminar a necessidade de instalações manuais na máquina do cliente.
+* 🔶 **(Em Desenvolvimento...) Extração Parametrizada:** Controle quais cidades e anos devem ser processados através de um único arquivo de configuração (`config.json`).
+* 🔶 **(Em Desenvolvimento...) Ambiente Containerizado:** Empacotado com Docker para garantir um ambiente de execução consistente e eliminar a necessidade de instalações manuais na máquina do cliente.
 
 ## 📂 Estrutura do Projeto
 **🔶(Em Desenvolvimento...)** 
