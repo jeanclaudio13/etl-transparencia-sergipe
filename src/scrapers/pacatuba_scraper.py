@@ -1,0 +1,235 @@
+# src/scrapers/pacatuba_scraper.py
+
+import logging
+import os
+import re
+import threading
+import time
+import unicodedata
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List
+
+import numpy
+import pandas as pd
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
+from webdriver_manager.chrome import ChromeDriverManager
+
+# Importa o logger e o contexto da thread do nosso módulo comum
+from src.common.logging_setup import log_context
+
+# --- Constantes e Funções Auxiliares Específicas de Pacatuba ---
+
+TERMOS_ROYALTIES = ["royaltie", "royalty", "petroleo"]
+
+RE_REMOVE_PUNCTUATION = re.compile(r'[^a-zA-Z0-9\s]')
+
+def normalizar(texto: str) -> str:
+    """
+    Normaliza um texto removendo acentos, pontuações e convertendo para minúsculas.
+    """
+    if not isinstance(texto, str):
+        return ""
+    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8')
+    texto = RE_REMOVE_PUNCTUATION.sub('', texto)
+    return texto.lower()
+
+# --- Funções de Interação com Selenium para Pacatuba ---
+
+def start_driver_pacatuba(headless=False) -> webdriver.Chrome:
+    logger = logging.getLogger('exdrop_osr')
+    logger.info("Iniciando driver do Chrome para Pacatuba...")
+    options = webdriver.ChromeOptions()
+
+    if headless:
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+    else:
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_argument("--disable-dev-shm-usage")
+    
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    return driver
+
+def selecionar_dropdown_pacatuba(driver, container_id, texto):
+    logger = logging.getLogger('exdrop_osr')
+    try:
+        logger.info(f"Selecionando: {texto}")
+        trigger = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//span[@aria-labelledby='{container_id}']"))
+        )
+        trigger.click()
+        opcao = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, f"//li[contains(@class, 'select2-results__option') and normalize-space(.)='{texto}']"))
+        )
+        opcao.click()
+    except Exception as e:
+        logger.error(f"Erro ao selecionar {texto} no campo {container_id}: {e}")
+        raise
+
+def ir_para_proxima_pagina_pacatuba(driver):
+    logger = logging.getLogger('osr_project')
+    try:
+        proxima_pagina_locator = (By.XPATH, "//a[contains(@class, 'page-link')][i[contains(@class, 'next')]]")
+        botao = driver.find_element(*proxima_pagina_locator)
+        parent_li = botao.find_element(By.XPATH, "./parent::li")
+        
+        if "disabled" in parent_li.get_attribute("class"):
+            logger.info("Última página alcançada.")
+            return False
+
+        botao.click()
+        logger.info("Navegando para a próxima página de resultados.")
+        WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+        return True
+    except NoSuchElementException:
+        logger.info("Botão 'Próxima Página' não encontrado. Fim da paginação.")
+        return False
+
+# --- Worker e Função Principal de Pacatuba ---
+
+def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str) -> List[dict]:
+    log_context.task_id = f"Pacatuba-Worker-{threading.get_ident() % 1000}"
+    logger = logging.getLogger('exdrop_osr')
+    
+    logger.info(f"Worker iniciado. Processando {len(links)} links.")
+    dados_coletados_pela_thread = []
+    driver = None
+    try:
+        driver = start_driver_pacatuba(headless=True)
+               
+        for i, link in enumerate(links):
+            try:
+                logger.debug(f"Acessando link {i+1}/{len(links)}.")
+                driver.get(link)
+                WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.ID, "table-dados")))
+                
+                # Mapa de XPaths para todos os campos na página de detalhes.
+                XPATHS_DETALHES = {           
+                    'empenho':          '//*[@id="table-dados"]/tbody/tr[2]/td[1]',
+                    'credor':           '//*[@id="table-dados"]/tbody/tr[2]/td[2]',
+                    'data_nota':        '//*[@id="table-dados"]/tbody/tr[2]/td[3]',
+
+                    'processo':         '//*[@id="table-dados"]/tbody/tr[4]/th[1]',
+                    'fonte_recurso':    '//*[@id="table-dados"]/tbody/tr[4]/th[2]',            
+                    'numero_documento': '//*[@id="table-dados"]/tbody/tr[4]/th[3]',
+
+                    'valor_pago':       '//*[@id="table-dados"]/tbody/tr[6]/td[1]',
+                    'valor_retido':     '//*[@id="table-dados"]/tbody/tr[6]/td[2]',
+                    'forma_pagamento':  '//*[@id="table-dados"]/tbody/tr[6]/td[3]',
+                    
+                    'historico':        '//*[@id="table-historico"]/tbody/tr/td',
+                    'relacionado_covid':'//*[@id="table-outras-informacoes"]/tbody/tr/td[1]',
+                    'relacionado_LC173':'//*[@id="table-outras-informacoes"]/tbody/tr/td[2]'
+                }
+                # --- ETAPA 1: Extrair APENAS a Fonte de Recurso para verificação ---
+                logger.debug("Verificando a Fonte de Recurso primeiro...")
+                fonte_recurso_texto = None
+                try:
+                    # Usa o XPath específico para a fonte de recurso
+                    fonte_recurso_element = driver.find_element(By.XPATH, XPATHS_DETALHES['fonte_recurso'])
+                    fonte_recurso_texto = fonte_recurso_element.text.strip()
+                    fonte_recurso_texto = normalizar(fonte_recurso_texto)
+                    
+                except NoSuchElementException:
+                    logger.warning(f"Campo 'fonte_recurso' não encontrado no link {link}. Pulando.")
+                    continue # Pula para o próximo link
+               
+                # --- ETAPA 2: Verificar se é de royalties ANTES de extrair o resto ---
+                if fonte_recurso_texto and any(termo in fonte_recurso_texto for termo in TERMOS_ROYALTIES):
+                    logger.info(f"Royalties encontrados (Fonte: '{fonte_recurso_texto}'). Extraindo todos os dados do link: {link}")
+                   
+                    dados_completos = {'fonte_recurso': fonte_recurso_texto, 'link_detalhe': link}
+                    for nome_campo, xpath in XPATHS_DETALHES.items():
+                        if nome_campo == 'fonte_recurso': continue
+                        try:
+                            dados_completos[nome_campo] = driver.find_element(By.XPATH, xpath).text.strip()
+                        except NoSuchElementException:
+                            dados_completos[nome_campo] = None
+                    dados_coletados_pela_thread.append(dados_completos)
+                    
+                else:
+                    logger.debug(f"Link não é de royalties. Fonte: '{fonte_recurso_texto}'. Pulando extração detalhada.")
+
+                    
+            except Exception as e_link:
+                logger.error(f"Erro ao processar o link {link}: {e_link}")
+                continue
+    finally:
+        if driver: driver.quit()
+        logger.info("Worker finalizado.")
+    
+    return dados_coletados_pela_thread
+
+def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
+    """Ponto de entrada para o scraper de Pacatuba."""
+    logger = logging.getLogger('exdrop_osr')
+    
+    for ano in anos_para_processar:
+        log_context.task_id = f"Pacatuba-{ano}"
+        logger.info(f"--- INICIANDO PROCESSAMENTO PARA PACATUBA - ANO DE {ano} ---")
+        
+        # --- FASE 1: COLETA DE TODOS OS LINKS NA THREAD PRINCIPAL ---
+        links_para_processar = []
+        driver = None
+        try:
+            logger.info("Fase 1: Coletando todos os links de detalhes...")
+            driver = start_driver_pacatuba(headless=True)
+            driver.get("https://transparencia.pacatuba.se.gov.br/public/portal/despesas")
+            
+            selecionar_dropdown_pacatuba(driver, "select2-tipo-container", "Pagamento")
+            selecionar_dropdown_pacatuba(driver, "select2-ano-container", ano)
+            
+            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button#filtrar.btn-buscar"))).click()
+            WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+            
+            pagina_atual = 1
+            while True:
+                logger.info(f"Coletando links da página: {pagina_atual}")
+                botoes_detalhes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//td[@serigyitem='detalhesPagamento']/a")))
+                for botao in botoes_detalhes:
+                    if link := botao.get_attribute('href'): links_para_processar.append(link)
+                
+                if not ir_para_proxima_pagina_pacatuba(driver): break
+                pagina_atual += 1
+        finally:
+            if driver: driver.quit()
+
+        logger.info(f"Fase 1 concluída. {len(links_para_processar)} links coletados.")
+        if not links_para_processar: continue
+
+        # --- FASE 2: DISTRIBUIÇÃO E PROCESSAMENTO PARALELO ---
+        logger.info(f"Fase 2: Iniciando extração com {max_workers} workers.")
+        dados_finais = []
+        
+        if max_workers > len(links_para_processar): max_workers = len(links_para_processar)
+        lista_de_tarefas = numpy.array_split(links_para_processar, max_workers) if max_workers > 0 else []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(worker_extrair_detalhes_pacatuba, tarefa.tolist(), ano): i for i, tarefa in enumerate(lista_de_tarefas) if tarefa.size > 0}
+            
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processando Detalhes de Pacatuba {ano}"):
+                if resultado_parcial := future.result(): dados_finais.extend(resultado_parcial)
+
+        # --- SALVAR RESULTADOS ---
+        if dados_finais:
+            output_dir = os.path.join("data", "processed", "pacatuba")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"pacatuba_royalties_{ano}.csv")
+            
+            df = pd.DataFrame(dados_finais)
+            df.to_csv(output_path, index=False, sep=';', encoding='utf-8-sig')
+            logger.info(f"Processamento concluído. {len(df)} registros salvos em: {output_path}")
+        else:
+            logger.info("Nenhum registro de royalties foi extraído.")
+            
+        logger.info(f"--- FINALIZADO PROCESSAMENTO DE PACATUBA - ANO DE {ano} ---")
