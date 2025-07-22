@@ -1,0 +1,30 @@
+{
+  "anos_para_processar": ["2022","2023","2024"],
+  "prefeituras_para_processar": [
+    "pirambu"
+  ],
+  "configuracoes_paralelismo": {
+    "max_workers": 3
+  },
+  "configuracoes_cidades": {
+    "aracaju": {
+      "scraper_module": "aracaju_barra_pirambu_scraper",
+      "url": "https://www.municipioonline.com.br/se/prefeitura/aracaju/cidadao/despesa",
+      "nome_iframe": null
+    },
+    "barra": {
+      "scraper_module": "aracaju_barra_pirambu_scraper",
+      "url": "https://www.municipioonline.com.br/se/prefeitura/barradoscoqueiros/cidadao/despesa",
+      "nome_iframe": null
+    },
+    "pirambu": {
+      "scraper_module": "aracaju_barra_pirambu_scraper",
+      "url": "https://www.municipioonline.com.br/se/prefeitura/pirambu/cidadao/despesa",
+      "nome_iframe": null
+    },
+    "pacatuba": {
+      "scraper_module": "pacatuba_scraper",
+      "url": "https://transparencia.pacatuba.se.gov.br/public/portal/despesas"
+    }
+  }
+}
