@@ -64,6 +64,7 @@ Existem duas maneiras de executar o projeto: usando Docker (recomendado para cli
     ```bash
     # Para Windows (CMD ou PowerShell)
     docker run --rm -v "%cd%/data:/app/data" -v "%cd%/logs:/app/logs" extrator-sergipe
+    docker run --rm -v "$(pwd)\data:/app/data" -v "$(pwd)\logs:/app/logs" extrator-sergipe
 
     # Para macOS ou Linux
     docker run --rm -v "$(pwd)/data:/app/data" -v "$(pwd)/logs:/app/logs" extrator-sergipe
