@@ -51,6 +51,7 @@ def start_driver_pacatuba(headless=False) -> webdriver.Chrome:
         options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
         options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
     else:
         options.add_argument('--window-size=1920,1080')
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -79,6 +80,10 @@ def selecionar_dropdown_pacatuba(driver, container_id, texto):
 def ir_para_proxima_pagina_pacatuba(driver):
     logger = logging.getLogger('osr_project')
     try:
+        # Pega a referência do primeiro item da tabela ANTES de clicar
+        primeira_linha_antes = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//table/tbody/tr[1]"))
+        )
         proxima_pagina_locator = (By.XPATH, "//a[contains(@class, 'page-link')][i[contains(@class, 'next')]]")
         botao = driver.find_element(*proxima_pagina_locator)
         parent_li = botao.find_element(By.XPATH, "./parent::li")
@@ -87,9 +92,20 @@ def ir_para_proxima_pagina_pacatuba(driver):
             logger.info("Última página alcançada.")
             return False
 
-        botao.click()
+        driver.execute_script("arguments[0].click();", botao)
         logger.info("Navegando para a próxima página de resultados.")
-        WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+        
+        # Agora, em vez de apenas esperar a tabela aparecer, esperamos que
+        # a referência da primeira linha da página anterior se torne "stale" (obsoleta).
+        # Isso confirma que o DOM foi atualizado.
+        WebDriverWait(driver, 20).until(
+            EC.staleness_of(primeira_linha_antes)
+        )
+        logger.debug("Confirmação de que a tabela foi recarregada (elemento anterior obsoleto).")
+        
+        # Opcional: uma espera adicional para a visibilidade da nova tabela
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+        
         return True
     except NoSuchElementException:
         logger.info("Botão 'Próxima Página' não encontrado. Fim da paginação.")
@@ -185,6 +201,27 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
             logger.info("Fase 1: Coletando todos os links de detalhes...")
             driver = start_driver_pacatuba(headless=True)
             driver.get("https://transparencia.pacatuba.se.gov.br/public/portal/despesas")
+            
+            # Lidando com pop-up dos cookies
+            try:
+                # Espera até 10 segundos para o botão de rejeitar cookies aparecer e ser clicável
+                logger.info("Procurando por banner de cookies para rejeitar...")
+                
+                botao_rejeitar_cookies = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.ID, "rejectCookie"))
+                )
+                
+                # Clica no botão para fechar o banner
+                botao_rejeitar_cookies.click()
+                logger.info("Banner de cookies rejeitado com sucesso.")
+                
+                # Adiciona uma pequena pausa para a animação do banner desaparecer
+                time.sleep(1)
+
+            except TimeoutException:
+                # Se o botão não aparecer em 10 segundos, assume que não há banner
+                logger.info("Nenhum banner de cookies encontrado para interagir.")
+                pass
             
             selecionar_dropdown_pacatuba(driver, "select2-tipo-container", "Pagamento")
             selecionar_dropdown_pacatuba(driver, "select2-ano-container", ano)

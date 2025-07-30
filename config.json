@@ -1,10 +1,10 @@
 {
-  "anos_para_processar": ["2022","2023","2024"],
+  "anos_para_processar": ["2021","2022","2023","2024"],
   "prefeituras_para_processar": [
-    "pirambu"
+    "pacatuba"
   ],
   "configuracoes_paralelismo": {
-    "max_workers": 3
+    "max_workers": 4
   },
   "configuracoes_cidades": {
     "aracaju": {
