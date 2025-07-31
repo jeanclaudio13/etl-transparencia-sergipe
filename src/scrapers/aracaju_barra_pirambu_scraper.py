@@ -44,7 +44,7 @@ def normalizar(texto: str) -> str:
 
 # --- Funções de Interação com Selenium ---
 
-def start_driver_aracaju_family(headless=False) -> webdriver.Chrome:
+def start_driver_aracaju_family(headless=False, executable_path=None) -> webdriver.Chrome:
     logger = logging.getLogger('exdrop_osr')
     logger.info("Iniciando driver do Chrome para a família de portais Serigy...")
     options = webdriver.ChromeOptions()
@@ -57,7 +57,15 @@ def start_driver_aracaju_family(headless=False) -> webdriver.Chrome:
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_argument("--disable-dev-shm-usage")
-    return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    # Lógica para usar o caminho pré-instalado ou o WebDriverManager
+    if executable_path:
+        service = ChromeService(executable_path=executable_path)
+    else:
+        # Fallback para o método antigo, útil para testes individuais
+        service = ChromeService(ChromeDriverManager().install())
+    
+    driver = webdriver.Chrome(service=service, options=options)
+    return driver
 
 def wait_for_loading_to_disappear(driver, timeout=60):
     logger = logging.getLogger('exdrop_osr')
@@ -263,7 +271,7 @@ def extrair_dados_pagina_aracaju(driver, dados_coletados_mes):
 
 # --- Worker e Função Principal (Ponto de Entrada do Módulo) ---
 
-def worker_processar_mes(cidade_config: dict, ano: str, mes: str):
+def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: str):
     cidade_nome = cidade_config['nome']
     log_context.task_id = f"{cidade_nome.capitalize()}-{ano}-{mes}"
     logger = logging.getLogger('exdrop_osr')
@@ -271,7 +279,7 @@ def worker_processar_mes(cidade_config: dict, ano: str, mes: str):
     
     driver = None
     try:
-        driver = start_driver_aracaju_family(headless=True)
+        driver = start_driver_aracaju_family(headless=True, executable_path=driver_path)
         driver.get(cidade_config['url'])
         
         # Lógica de iframe (se existir no config)
@@ -312,6 +320,16 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
     logger = logging.getLogger('exdrop_osr')
     cidade_nome = cidade_config['nome']
     
+    # --- ETAPA DE INSTALAÇÃO ÚNICA DO DRIVER ---
+    try:
+        logger.info("Instalando/Verificando o ChromeDriver antes de iniciar os workers...")
+        driver_path = ChromeDriverManager().install()
+        logger.info(f"ChromeDriver está pronto em: {driver_path}")
+    except Exception as e:
+        logger.critical(f"Falha ao instalar o ChromeDriver. Abortando. Erro: {e}")
+        return
+    # --- FIM DA INSTALAÇÃO ---
+    
     for ano in anos_para_processar:
         log_context.task_id = f"{cidade_nome.capitalize()}-{ano}"
         logger.info(f"--- INICIANDO PROCESSAMENTO PARA {cidade_nome.upper()} - ANO DE {ano} ---")
@@ -321,7 +339,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Passa a configuração da cidade para cada worker
-            func_com_args = partial(worker_processar_mes, cidade_config)
+            func_com_args = partial(worker_processar_mes, cidade_config, driver_path=driver_path)
             futures = [executor.submit(func_com_args, *tarefa) for tarefa in tarefas] # * crucial para desempacotar atupla (ano, mes)
             
             for future in tqdm(as_completed(futures), total=len(tarefas), desc=f"Processando Meses de {cidade_nome.capitalize()} {ano}"):

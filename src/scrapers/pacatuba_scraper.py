@@ -42,7 +42,7 @@ def normalizar(texto: str) -> str:
 
 # --- Funções de Interação com Selenium para Pacatuba ---
 
-def start_driver_pacatuba(headless=False) -> webdriver.Chrome:
+def start_driver_pacatuba(headless=False, executable_path=None) -> webdriver.Chrome:
     logger = logging.getLogger('exdrop_osr')
     logger.info("Iniciando driver do Chrome para Pacatuba...")
     options = webdriver.ChromeOptions()
@@ -58,7 +58,13 @@ def start_driver_pacatuba(headless=False) -> webdriver.Chrome:
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_argument("--disable-dev-shm-usage")
     
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    # Lógica para usar o caminho pré-instalado ou o WebDriverManager
+    if executable_path:
+        service = ChromeService(executable_path=executable_path)
+    else:
+        service = ChromeService(ChromeDriverManager().install())
+    
+    driver = webdriver.Chrome(service=service, options=options)
     return driver
 
 def selecionar_dropdown_pacatuba(driver, container_id, texto):
@@ -113,7 +119,7 @@ def ir_para_proxima_pagina_pacatuba(driver):
 
 # --- Worker e Função Principal de Pacatuba ---
 
-def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str) -> List[dict]:
+def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_path: str) -> List[dict]:
     log_context.task_id = f"Pacatuba-Worker-{threading.get_ident() % 1000}"
     logger = logging.getLogger('exdrop_osr')
     
@@ -121,7 +127,7 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str) -> List[di
     dados_coletados_pela_thread = []
     driver = None
     try:
-        driver = start_driver_pacatuba(headless=True)
+        driver = start_driver_pacatuba(headless=True, executable_path=driver_path)
                
         for i, link in enumerate(links):
             try:
@@ -189,6 +195,17 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str) -> List[di
 def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
     """Ponto de entrada para o scraper de Pacatuba."""
     logger = logging.getLogger('exdrop_osr')
+    cidade_nome = cidade_config.get('nome', 'pacatuba')
+    
+     # --- ETAPA DE INSTALAÇÃO ÚNICA DO DRIVER ---
+    try:
+        logger.info("Instalando/Verificando o ChromeDriver para Pacatuba...")
+        driver_path = ChromeDriverManager().install()
+        logger.info(f"ChromeDriver está pronto em: {driver_path}")
+    except Exception as e:
+        logger.critical(f"Falha ao instalar o ChromeDriver. Abortando. Erro: {e}")
+        return
+    # --- FIM DA INSTALAÇÃO ---
     
     for ano in anos_para_processar:
         log_context.task_id = f"Pacatuba-{ano}"

@@ -1,10 +1,12 @@
 {
-  "anos_para_processar": ["2021","2022","2023","2024"],
+  "anos_para_processar": [
+    "2019", "2020"
+  ],
   "prefeituras_para_processar": [
-    "pacatuba"
+    "barra"
   ],
   "configuracoes_paralelismo": {
-    "max_workers": 4
+    "max_workers": 3
   },
   "configuracoes_cidades": {
     "aracaju": {
