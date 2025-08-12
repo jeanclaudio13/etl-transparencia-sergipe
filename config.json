@@ -1,12 +1,16 @@
 {
   "anos_para_processar": [
-    "2019", "2020"
+    "2019",
+    "2020",
+    "2021"
   ],
   "prefeituras_para_processar": [
-    "barra"
+    "barra",
+    "pirambu",
+    "aracaju"
   ],
   "configuracoes_paralelismo": {
-    "max_workers": 3
+    "max_workers": 4
   },
   "configuracoes_cidades": {
     "aracaju": {
