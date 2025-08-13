@@ -3,11 +3,18 @@
     "2025"
   ],
   "prefeituras_para_processar": [
-    "aracaju",
-    "barra",
-    "pirambu"
+    "aracaju"
   ],
-  "meses_para_processar": null,
+  "meses_para_processar": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08"
+  ],
   "configuracoes_paralelismo": {
     "max_workers": 2
   },

@@ -69,7 +69,7 @@ with st.container(border=True):
         st.info("Para Aracaju, Barra, Pirambu e Pacatuba, você pode especificar os meses. Se deixado em branco, todos os 12 meses serão processados.")
         meses_texto = st.text_input(
             "Meses para Processar (separados por vírgula, ex: 01, 02, 11):",
-            value=", ".join(config.get("meses_para_processar", [])),
+            value=", ".join(config.get("meses_para_processar") or []),
             placeholder="Deixe em branco para processar todos os meses",
             key='meses_input'
         )
