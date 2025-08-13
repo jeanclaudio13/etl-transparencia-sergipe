@@ -7,9 +7,7 @@
     "barra",
     "pirambu"
   ],
-  "meses_para_processar": [
-    
-  ],
+  "meses_para_processar": null,
   "configuracoes_paralelismo": {
     "max_workers": 2
   },

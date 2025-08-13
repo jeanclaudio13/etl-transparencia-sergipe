@@ -48,11 +48,6 @@ with st.container(border=True):
         options=todas_as_cidades,
         default=config.get("prefeituras_para_processar", [])
     )
-
-    anos_texto = st.text_input(
-        "Anos para Processar (separados por vírgula):",
-        value=", ".join(config.get("anos_para_processar", []))
-    )
     
     # --- LÓGICA CONDICIONAL PARA OS MESES ---
     
@@ -64,17 +59,19 @@ with st.container(border=True):
     
     anos_texto = st.text_input(
         "Anos para Processar (separados por vírgula):",
-        value=", ".join(config.get("anos_para_processar", []))
+        value=", ".join(config.get("anos_para_processar", [])),
+        key='anos_input'
     )
     
     # A variável 'meses_para_processar' só será definida se o campo for exibido
     meses_para_processar = None
     if mostrar_filtro_mes:
-        st.info("Para Aracaju, Barra e Pirambu, você pode especificar os meses. Se deixado em branco, todos os 12 meses serão processados.")
+        st.info("Para Aracaju, Barra, Pirambu e Pacatuba, você pode especificar os meses. Se deixado em branco, todos os 12 meses serão processados.")
         meses_texto = st.text_input(
             "Meses para Processar (separados por vírgula, ex: 01, 02, 11):",
             value=", ".join(config.get("meses_para_processar", [])),
-            placeholder="Deixe em branco para processar todos os meses"
+            placeholder="Deixe em branco para processar todos os meses",
+            key='meses_input'
         )
         # Converte o texto em uma lista limpa. Se for vazio, a lista será vazia.
         meses_para_processar = [mes.strip() for mes in meses_texto.split(',') if mes.strip()]
