@@ -86,23 +86,65 @@ def selecionar_ano_mes_aracaju(driver, ano, mes):
     wait_for_loading_to_disappear(driver)
     logger.info(f"Filtro para {mes}/{ano} aplicado.")
     
-def ir_para_proxima_pagina_aracaju(driver):
+
+def ir_para_proxima_pagina_aracaju(driver, tentativas_maximas=3):
+    """
+    Tenta clicar no botão da próxima página na tabela de pagamentos com lógica de retentativas.
+    Retorna True se conseguiu ir para a próxima página, False caso contrário.
+    """
     logger = logging.getLogger('exdrop_osr')
-    try:
-        proxima_pagina_li = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "dataTables-Pagamentos_next")))
-        if "disabled" in proxima_pagina_li.get_attribute("class"):
-            logger.info("Última página alcançada (botão 'Próximo' <li> tem classe 'disabled').")
-            return False
-        
-        #proxima_pagina_li.click()
-        logger.debug("Executando clique no botão 'Próximo' via JavaScript.")
-        driver.execute_script("arguments[0].click();", proxima_pagina_li)
-        
-        wait_for_loading_to_disappear(driver)
-        return True
-    except (NoSuchElementException, TimeoutException):
-        logger.info("Botão 'Próxima Página' não encontrado. Fim da paginação.")
-        return False
+    
+    for tentativa in range(1, tentativas_maximas + 1):
+        try:
+            logger.info(f"Tentando navegar para a próxima página (Tentativa {tentativa}/{tentativas_maximas})...")
+            
+            proxima_pagina_li_locator = (By.ID, "dataTables-Pagamentos_next")
+            
+            # Espera que o elemento <li> esteja presente
+            proxima_pagina_li_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located(proxima_pagina_li_locator)
+            )
+            
+            # Verifica se o botão <li> está desabilitado pela classe
+            if "disabled" in proxima_pagina_li_element.get_attribute("class"):
+                logger.info("Última página alcançada (botão 'Próximo' está desabilitado).")
+                return False
+
+            # Usa clique via JavaScript para maior robustez
+            driver.execute_script("arguments[0].click();", proxima_pagina_li_element)
+            
+            # Aguarda o indicador de carregamento da página desaparecer
+            wait_for_loading_to_disappear(driver)
+            
+            logger.info("Navegou para a próxima página com sucesso.")
+            return True # Sucesso, sai da função
+
+        except (TimeoutException, NoSuchElementException) as e:
+            logger.warning(f"Falha na tentativa {tentativa}: {type(e).__name__}.")
+            
+            if tentativa < tentativas_maximas:
+                tempo_espera = 5 * tentativa # Espera 5s, 10s...
+                logger.info(f"Aguardando {tempo_espera} segundos antes da próxima tentativa.")
+                time.sleep(tempo_espera)
+            else:
+                    logger.error("Número máximo de tentativas atingido. Abortando a paginação.")
+                    
+                    # Salva o diagnóstico na última tentativa falha
+                    # --- LÓGICA DE DIAGNÓSTICO ---
+                    timestamp = time.strftime("%Y%m%d-%H%M%S")
+                    screenshot_path = f"logs/pacatuba_erro_pagina_{timestamp}.png"
+                    html_path = f"logs/pacatuba_erro_pagina_{timestamp}.html"
+                    
+                    driver.save_screenshot(screenshot_path)
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(driver.page_source)
+                    
+                    logger.error(f"Captura de tela salva em: {screenshot_path}")
+                    logger.error(f"Código HTML da página salvo em: {html_path}")
+                    # --- FIM DO DIAGNÓSTICO ---
+                    return False # Desiste após todas as tentativas
+
+    return False
 
 def extrair_dados_pagina_aracaju(driver, dados_coletados_mes):
     logger = logging.getLogger('exdrop_osr')
@@ -271,7 +313,7 @@ def extrair_dados_pagina_aracaju(driver, dados_coletados_mes):
 
 # --- Worker e Função Principal (Ponto de Entrada do Módulo) ---
 
-def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: str):
+def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: str, headless:bool):
     cidade_nome = cidade_config['nome']
     log_context.task_id = f"{cidade_nome.capitalize()}-{ano}-{mes}"
     logger = logging.getLogger('exdrop_osr')
@@ -279,7 +321,7 @@ def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: s
     
     driver = None
     try:
-        driver = start_driver_aracaju_family(headless=True, executable_path=driver_path)
+        driver = start_driver_aracaju_family(headless=headless, executable_path=driver_path)
         driver.get(cidade_config['url'])
         
         # Lógica de iframe (se existir no config)
@@ -315,7 +357,7 @@ def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: s
     finally:
         if driver: driver.quit()
 
-def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
+def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, headless:bool):
     """Ponto de entrada que orquestra a extração para Aracaju, Barra ou Pirambu."""
     logger = logging.getLogger('exdrop_osr')
     cidade_nome = cidade_config['nome']
@@ -339,7 +381,12 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Passa a configuração da cidade para cada worker
-            func_com_args = partial(worker_processar_mes, cidade_config, driver_path=driver_path)
+            func_com_args = partial(
+                worker_processar_mes,
+                cidade_config,
+                driver_path=driver_path,
+                headless=headless
+            )
             futures = [executor.submit(func_com_args, *tarefa) for tarefa in tarefas] # * crucial para desempacotar atupla (ano, mes)
             
             for future in tqdm(as_completed(futures), total=len(tarefas), desc=f"Processando Meses de {cidade_nome.capitalize()} {ano}"):

@@ -7,7 +7,9 @@ import threading
 import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 from typing import List
+
 
 import numpy
 import pandas as pd
@@ -83,43 +85,84 @@ def selecionar_dropdown_pacatuba(driver, container_id, texto):
         logger.error(f"Erro ao selecionar {texto} no campo {container_id}: {e}")
         raise
 
-def ir_para_proxima_pagina_pacatuba(driver):
+def ir_para_proxima_pagina_pacatuba(driver, tentativas_maximas=3):
+    """
+    Tenta clicar no botão 'Próxima Página' com lógica de retentativas.
+    """
     logger = logging.getLogger('osr_project')
-    try:
-        # Pega a referência do primeiro item da tabela ANTES de clicar
-        primeira_linha_antes = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//table/tbody/tr[1]"))
-        )
-        proxima_pagina_locator = (By.XPATH, "//a[contains(@class, 'page-link')][i[contains(@class, 'next')]]")
-        botao = driver.find_element(*proxima_pagina_locator)
-        parent_li = botao.find_element(By.XPATH, "./parent::li")
-        
-        if "disabled" in parent_li.get_attribute("class"):
-            logger.info("Última página alcançada.")
-            return False
+    
+    for tentativa in range(1, tentativas_maximas + 1):
+        try:
+            logger.info(f"Tentando navegar para a próxima página (Tentativa {tentativa}/{tentativas_maximas})...")
+            
+            # Pega a referência do primeiro item da tabela ANTES de clicar
+            primeira_linha_antes = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//table/tbody/tr[1]"))
+            )
+            proxima_pagina_locator = (By.XPATH, "//a[contains(@class, 'page-link')][i[contains(@class, 'next')]]")
+            botao = driver.find_element(*proxima_pagina_locator)
+            parent_li = botao.find_element(By.XPATH, "./parent::li")
+            
+            if "disabled" in parent_li.get_attribute("class"):
+                logger.info("Última página alcançada.")
+                return False
 
-        driver.execute_script("arguments[0].click();", botao)
-        logger.info("Navegando para a próxima página de resultados.")
+            driver.execute_script("arguments[0].click();", botao)
+            logger.info("Navegando para a próxima página de resultados.")
+            
+            # Esperamos que referência da primeira linha da página anterior se torne "stale" (obsoleta).
+            # Isso confirma que o DOM foi atualizado.
+            WebDriverWait(driver, 20).until(
+                EC.staleness_of(primeira_linha_antes)
+            )
+            logger.debug("Confirmação de que a tabela foi recarregada (elemento anterior obsoleto).")
+            
+            # Opcional: uma espera adicional para a visibilidade da nova tabela
+            WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+            
+            logger.debug("Navegou para a próxima página com sucesso.")
+            return True
         
-        # Agora, em vez de apenas esperar a tabela aparecer, esperamos que
-        # a referência da primeira linha da página anterior se torne "stale" (obsoleta).
-        # Isso confirma que o DOM foi atualizado.
-        WebDriverWait(driver, 20).until(
-            EC.staleness_of(primeira_linha_antes)
-        )
-        logger.debug("Confirmação de que a tabela foi recarregada (elemento anterior obsoleto).")
+        except (TimeoutException, NoSuchElementException) as e:
+                logger.warning(f"Falha na tentativa {tentativa}: {type(e).__name__}. Verificando se é o fim da paginação.")
+                
+                # Checa novamente se o botão de próximo existe e está desabilitado
+                try:
+                    if "disabled" in driver.find_element(By.ID, "lista_next").get_attribute("class"):
+                        logger.info("Confirmação de que a última página foi alcançada.")
+                        return False
+                except:
+                    pass # Se não encontrar, continua para a próxima tentativa
+
+                if tentativa < tentativas_maximas:
+                    tempo_espera = 5 * tentativa # Espera 5s, 10s...
+                    logger.info(f"Aguardando {tempo_espera} segundos antes da próxima tentativa.")
+                    time.sleep(tempo_espera)
+                    driver.refresh() # Recarrega a página para tentar "desbloquear"
+                    WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+                else:
+                    logger.error("Número máximo de tentativas atingido. Abortando a paginação.")
+                    
+                    # Salva o diagnóstico na última tentativa falha
+                    # --- LÓGICA DE DIAGNÓSTICO ---
+                    timestamp = time.strftime("%Y%m%d-%H%M%S")
+                    screenshot_path = f"logs/pacatuba_erro_pagina_{timestamp}.png"
+                    html_path = f"logs/pacatuba_erro_pagina_{timestamp}.html"
+                    
+                    driver.save_screenshot(screenshot_path)
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(driver.page_source)
+                    
+                    logger.error(f"Captura de tela salva em: {screenshot_path}")
+                    logger.error(f"Código HTML da página salvo em: {html_path}")
+                    # --- FIM DO DIAGNÓSTICO ---
+                    return False # Desiste após todas as tentativas
         
-        # Opcional: uma espera adicional para a visibilidade da nova tabela
-        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
-        
-        return True
-    except NoSuchElementException:
-        logger.info("Botão 'Próxima Página' não encontrado. Fim da paginação.")
         return False
-
+            
 # --- Worker e Função Principal de Pacatuba ---
 
-def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_path: str) -> List[dict]:
+def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_path: str, headless:bool) -> List[dict]:
     log_context.task_id = f"Pacatuba-Worker-{threading.get_ident() % 1000}"
     logger = logging.getLogger('exdrop_osr')
     
@@ -127,7 +170,7 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_pat
     dados_coletados_pela_thread = []
     driver = None
     try:
-        driver = start_driver_pacatuba(headless=True, executable_path=driver_path)
+        driver = start_driver_pacatuba(headless=headless, executable_path=driver_path)
                
         for i, link in enumerate(links):
             try:
@@ -192,7 +235,7 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_pat
     
     return dados_coletados_pela_thread
 
-def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
+def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, headless:bool):
     """Ponto de entrada para o scraper de Pacatuba."""
     logger = logging.getLogger('exdrop_osr')
     cidade_nome = cidade_config.get('nome', 'pacatuba')
@@ -216,7 +259,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
         driver = None
         try:
             logger.info("Fase 1: Coletando todos os links de detalhes...")
-            driver = start_driver_pacatuba(headless=True)
+            driver = start_driver_pacatuba(headless=headless)
             driver.get("https://transparencia.pacatuba.se.gov.br/public/portal/despesas")
             
             # Lidando com pop-up dos cookies
@@ -269,7 +312,8 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int):
         lista_de_tarefas = numpy.array_split(links_para_processar, max_workers) if max_workers > 0 else []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(worker_extrair_detalhes_pacatuba, tarefa.tolist(), ano): i for i, tarefa in enumerate(lista_de_tarefas) if tarefa.size > 0}
+            func_com_args = partial(worker_extrair_detalhes_pacatuba, driver_path=driver_path, headless=headless)
+            futures = {executor.submit(func_com_args, tarefa.tolist(), ano): i for i, tarefa in enumerate(lista_de_tarefas) if tarefa.size > 0}
             
             for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processando Detalhes de Pacatuba {ano}"):
                 if resultado_parcial := future.result(): dados_finais.extend(resultado_parcial)
