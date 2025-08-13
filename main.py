@@ -39,7 +39,10 @@ def main():
         config = json.load(f)
     anos = config["anos_para_processar"]
     cidades = config["prefeituras_para_processar"]
+    meses = config.get("meses_para_processar", None)
     max_workers = config["configuracoes_paralelismo"]["max_workers"]
+    
+    
     for cidade_nome in cidades:
         if cidade_nome in config["configuracoes_cidades"]:
             cidade_config = config["configuracoes_cidades"][cidade_nome]
@@ -52,6 +55,7 @@ def main():
                 scraper_module.run(
                     cidade_config=cidade_config,
                     anos_para_processar=anos,
+                    meses_para_processar=meses,
                     max_workers=max_workers,
                     headless=headless_mode)
             else:

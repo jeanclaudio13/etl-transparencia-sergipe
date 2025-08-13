@@ -3,7 +3,12 @@
     "2025"
   ],
   "prefeituras_para_processar": [
-    "pacatuba"
+    "aracaju",
+    "barra",
+    "pirambu"
+  ],
+  "meses_para_processar": [
+    
   ],
   "configuracoes_paralelismo": {
     "max_workers": 2

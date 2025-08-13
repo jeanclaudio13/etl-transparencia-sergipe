@@ -25,6 +25,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # Importa o logger e o contexto da thread do nosso módulo comum
 from src.common.logging_setup import log_context
+from src.common.file_utils import unir_csvs_por_ano
 
 # --- Constantes e Funções Auxiliares Específicas de Pacatuba ---
 
@@ -162,6 +163,86 @@ def ir_para_proxima_pagina_pacatuba(driver, tentativas_maximas=3):
             
 # --- Worker e Função Principal de Pacatuba ---
 
+def worker_processar_mes_pacatuba(cidade_config: dict, ano_mes_tuple: tuple, driver_path: str, headless: bool):
+    """
+    Worker que extrai dados de um ÚNICO MÊS para Pacatuba.
+    Ele seleciona o filtro "Mês" e depois coleta e processa os links.
+    """
+    ano, mes = ano_mes_tuple
+    log_context.task_id = f"Pacatuba-{ano}-{mes}"
+    logger = logging.getLogger('exdrop_osr')
+    logger.info(f"Worker MENSAL iniciado para Pacatuba - {mes}/{ano}.")
+    
+    links_do_mes = []
+    driver = None
+    try:
+        driver = start_driver_pacatuba(headless=headless, executable_path=driver_path)
+        driver.get(cidade_config['url'])
+        
+        # Lidando com pop-up dos cookies
+        try:
+            # Espera até 10 segundos para o botão de rejeitar cookies aparecer e ser clicável
+            logger.info("Procurando por banner de cookies para rejeitar...")
+            
+            botao_rejeitar_cookies = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "rejectCookie"))
+            )
+            
+            # Clica no botão para fechar o banner
+            botao_rejeitar_cookies.click()
+            logger.info("Banner de cookies rejeitado com sucesso.")
+            
+            # Adiciona uma pequena pausa para a animação do banner desaparecer
+            time.sleep(1)
+        except TimeoutException:
+                # Se o botão não aparecer em 10 segundos, assume que não há banner
+                logger.info("Nenhum banner de cookies encontrado para interagir.")
+                pass
+
+        # --- LÓGICA DE FILTRAGEM MENSAL ---
+        # 1. Clica no botão de rádio "Mês"
+        logger.info("Selecionando modo de filtro por Mês.")
+        driver.find_element(By.ID, "filtro_2").click()
+        
+        # 2. Seleciona o Ano e o Mês
+        selecionar_dropdown_pacatuba(driver, "select2-ano-container", ano)
+        selecionar_dropdown_pacatuba(driver, "select2-mes-container", mes) # Usa o ID do dropdown de mês
+        
+        # 3. Clica em Buscar
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button#filtrar.btn-buscar"))).click()
+        WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+        
+        # 4. Coleta os links da(s) página(s) de resultado para este mês
+        pagina_atual = 1
+        while True:
+            logger.info(f"Coletando links da página {pagina_atual} para o mês {mes}/{ano}...")
+            botoes_detalhes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//td[@serigyitem='detalhesPagamento']/a")))
+            for botao in botoes_detalhes:
+                if link := botao.get_attribute('href'):
+                    links_do_mes.append(link)
+            if not ir_para_proxima_pagina_pacatuba(driver):
+                break
+            pagina_atual += 1
+        
+    finally:
+        if driver:
+            driver.quit()
+    
+    # 5. Processa os links coletados para este mês
+    if links_do_mes:
+        # Reutilizamos nosso worker de extração de detalhes já existente!
+        dados_finais_mes = worker_extrair_detalhes_pacatuba(links_do_mes, ano, driver_path, headless)
+        
+        if dados_finais_mes:
+            # Salva o arquivo CSV para este mês específico
+            cidade_nome = cidade_config.get('nome', 'pacatuba')
+            output_dir = os.path.join("data", "processed", cidade_nome)
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"{cidade_nome}_royalties_{ano}_{mes}.csv")
+            pd.DataFrame(dados_finais_mes).to_csv(output_path, index=False, sep=';', encoding='utf-8-sig')
+            logger.info(f"Dados salvos para Pacatuba - {mes}/{ano} em {output_path}")
+
+
 def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_path: str, headless:bool) -> List[dict]:
     log_context.task_id = f"Pacatuba-Worker-{threading.get_ident() % 1000}"
     logger = logging.getLogger('exdrop_osr')
@@ -235,8 +316,13 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_pat
     
     return dados_coletados_pela_thread
 
-def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, headless:bool):
-    """Ponto de entrada para o scraper de Pacatuba."""
+def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processar: List[str],max_workers: int, headless:bool):
+    """
+    Ponto de entrada para o scraper de Pacatuba.
+    Decide entre a extração anual (coleta de links em massa) ou mensal
+    com base no parâmetro 'meses_para_processar'.
+    """
+    
     logger = logging.getLogger('exdrop_osr')
     cidade_nome = cidade_config.get('nome', 'pacatuba')
     
@@ -253,6 +339,30 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, h
     for ano in anos_para_processar:
         log_context.task_id = f"Pacatuba-{ano}"
         logger.info(f"--- INICIANDO PROCESSAMENTO PARA PACATUBA - ANO DE {ano} ---")
+        
+        # --- DECISÃO DA ESTRATÉGIA ---
+        if meses_para_processar:
+            # MODO MENSAL: Paraleliza por mês
+            logger.info(f"Modo de extração MENSAL selecionado para os meses: {meses_para_processar}")
+            tarefas = [(ano, mes) for mes in meses_para_processar]
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                func_com_args = partial(worker_processar_mes_pacatuba, cidade_config, driver_path=driver_path, headless=headless)
+                futures = {executor.submit(func_com_args, tarefa) for tarefa in tarefas}
+                for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processando Meses de Pacatuba {ano}"):
+                    future.result() # Apenas para capturar exceções
+            
+            # Consolida os arquivos mensais gerados
+            unir_csvs_por_ano(cidade_nome=cidade_nome, ano=ano)
+
+        else:
+            # MODO ANUAL: Coleta todos os links do ano e paraleliza a extração
+            logger.info("Modo de extração ANUAL selecionado.")
+        
+        
+        
+        
+        
+        
         
         # --- FASE 1: COLETA DE TODOS OS LINKS NA THREAD PRINCIPAL ---
         links_para_processar = []

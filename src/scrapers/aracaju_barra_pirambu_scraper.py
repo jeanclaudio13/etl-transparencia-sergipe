@@ -357,7 +357,7 @@ def worker_processar_mes(cidade_config: dict, ano: str, mes: str, driver_path: s
     finally:
         if driver: driver.quit()
 
-def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, headless:bool):
+def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processar: List[str], max_workers: int, headless:bool):
     """Ponto de entrada que orquestra a extração para Aracaju, Barra ou Pirambu."""
     logger = logging.getLogger('exdrop_osr')
     cidade_nome = cidade_config['nome']
@@ -376,7 +376,13 @@ def run(cidade_config: dict, anos_para_processar: List[str], max_workers: int, h
         log_context.task_id = f"{cidade_nome.capitalize()}-{ano}"
         logger.info(f"--- INICIANDO PROCESSAMENTO PARA {cidade_nome.upper()} - ANO DE {ano} ---")
         
-        meses = [f"{m:02d}" for m in range(1, 13)]
+        # Lógica de seleção de meses
+        if meses_para_processar:
+            logger.info(f"Executando para meses específicos: {meses_para_processar}")
+            meses=meses_para_processar
+        else:
+            meses = [f"{m:02d}" for m in range(1, 13)]
+            
         tarefas = [(ano, mes) for mes in meses]
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:

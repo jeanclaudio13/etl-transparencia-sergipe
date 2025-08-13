@@ -29,7 +29,7 @@ def salvar_config(config):
 
 # --- Construção da Interface ---
 
-st.set_page_config(page_title="Extrator de Royalties", layout="centered")
+st.set_page_config(page_title="EXDROP - Sergipe", layout="centered")
 st.header("EXDROP")
 st.title("⚙️ Painel de Controle - ExDRoP")
 st.subheader("Extrator de Dados de Royalties do Petróleo")
@@ -53,6 +53,31 @@ with st.container(border=True):
         "Anos para Processar (separados por vírgula):",
         value=", ".join(config.get("anos_para_processar", []))
     )
+    
+    # --- LÓGICA CONDICIONAL PARA OS MESES ---
+    
+    # Define quais cidades usam o filtro de mês
+    cidades_com_filtro_mensal = ["aracaju", "barra", "pirambu", "pacatuba"]
+    
+    # Verifica se qualquer uma das cidades selecionadas precisa do filtro de mês
+    mostrar_filtro_mes = any(cidade in cidades_com_filtro_mensal for cidade in cidades_selecionadas)
+    
+    anos_texto = st.text_input(
+        "Anos para Processar (separados por vírgula):",
+        value=", ".join(config.get("anos_para_processar", []))
+    )
+    
+    # A variável 'meses_para_processar' só será definida se o campo for exibido
+    meses_para_processar = None
+    if mostrar_filtro_mes:
+        st.info("Para Aracaju, Barra e Pirambu, você pode especificar os meses. Se deixado em branco, todos os 12 meses serão processados.")
+        meses_texto = st.text_input(
+            "Meses para Processar (separados por vírgula, ex: 01, 02, 11):",
+            value=", ".join(config.get("meses_para_processar", [])),
+            placeholder="Deixe em branco para processar todos os meses"
+        )
+        # Converte o texto em uma lista limpa. Se for vazio, a lista será vazia.
+        meses_para_processar = [mes.strip() for mes in meses_texto.split(',') if mes.strip()]
     
     max_workers = st.slider(
     "Número de Processos Paralelos (Workers):",
@@ -93,6 +118,14 @@ with st.container(border=True):
         config["prefeituras_para_processar"] = cidades_selecionadas
         config["anos_para_processar"] = [ano.strip() for ano in anos_texto.split(',') if ano.strip()]
         config["configuracoes_paralelismo"]["max_workers"] = max_workers
+        # Adiciona ou remove a chave de meses do config
+        if meses_para_processar is not None:
+             # Se a lista estiver vazia (usuário apagou), usa None. Senão, usa a lista.
+            config["meses_para_processar"] = meses_para_processar if meses_para_processar else None
+        else:
+            # Garante que a chave não exista se nenhuma cidade relevante foi selecionada
+            config.pop("meses_para_processar", None)
+        
         salvar_config(config)
         st.success(f"Configurações salvas no arquivo '{CONFIG_FILE}'!")
         
@@ -124,7 +157,22 @@ with st.container(border=True):
                     # Lê a saída do processo linha por linha enquanto ele executa
                     for linha in iter(processo.stdout.readline, ''):
                         log_output += linha
-                        log_placeholder.code(log_output, language='log')
+                        
+                        # Log funcionando (sem rolagem automática)
+                        #log_placeholder.code(log_output, language='log')
+                        
+                        # Log com rolagem automática
+                        log_html = f"""
+                        <div style="height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px; font-family: monospace; white-space: pre-wrap;" id="log-container">
+                            {log_output}
+                        </div>
+                        <script>
+                            var container = document.getElementById("log-container");
+                            container.scrollTop = container.scrollHeight;
+                        </script>
+                        """
+                        # Usa st.html para renderizar o log e executar o script
+                        log_placeholder.html(log_html)  
 
                     processo.stdout.close()
                     processo.wait() # Espera o processo realmente terminar
