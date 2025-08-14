@@ -66,7 +66,7 @@ with st.container(border=True):
     # A variável 'meses_para_processar' só será definida se o campo for exibido
     meses_para_processar = None
     if mostrar_filtro_mes:
-        st.info("Para Aracaju, Barra, Pirambu e Pacatuba, você pode especificar os meses. Se deixado em branco, todos os 12 meses serão processados.")
+        st.info("Para Aracaju, Barra, Pirambu e Pacatuba, você pode especificar os meses. \nSe deixado em branco, todos os 12 meses serão processados.")
         meses_texto = st.text_input(
             "Meses para Processar (separados por vírgula, ex: 01, 02, 11):",
             value=", ".join(config.get("meses_para_processar") or []),
@@ -156,20 +156,20 @@ with st.container(border=True):
                         log_output += linha
                         
                         # Log funcionando (sem rolagem automática)
-                        #log_placeholder.code(log_output, language='log')
+                        log_placeholder.code(log_output, language='log')
                         
-                        # Log com rolagem automática
-                        log_html = f"""
-                        <div style="height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px; font-family: monospace; white-space: pre-wrap;" id="log-container">
-                            {log_output}
-                        </div>
-                        <script>
-                            var container = document.getElementById("log-container");
-                            container.scrollTop = container.scrollHeight;
-                        </script>
-                        """
-                        # Usa st.html para renderizar o log e executar o script
-                        log_placeholder.html(log_html)  
+                        # # Log com rolagem automática mas sem formatação
+                        # log_html = f"""
+                        # <div style="height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px; font-family: monospace; white-space: pre-wrap;" id="log-container">
+                        #     {log_output}
+                        # </div>
+                        # <script>
+                        #     var container = document.getElementById("log-container");
+                        #     container.scrollTop = container.scrollHeight;
+                        # </script>
+                        # """
+                        # # Usa st.html para renderizar o log e executar o script
+                        # log_placeholder.html(log_html)  
 
                     processo.stdout.close()
                     processo.wait() # Espera o processo realmente terminar
