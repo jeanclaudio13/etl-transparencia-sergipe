@@ -20,7 +20,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from tqdm import tqdm
+
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Importa o logger e o contexto da thread do nosso módulo comum
@@ -348,7 +348,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 func_com_args = partial(worker_processar_mes_pacatuba, cidade_config, driver_path=driver_path, headless=headless)
                 futures = {executor.submit(func_com_args, tarefa) for tarefa in tarefas}
-                for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processando Meses de Pacatuba {ano}"):
+                for future in as_completed(futures):
                     future.result() # Apenas para capturar exceções
             
             # Consolida os arquivos mensais gerados
@@ -425,7 +425,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
             func_com_args = partial(worker_extrair_detalhes_pacatuba, driver_path=driver_path, headless=headless)
             futures = {executor.submit(func_com_args, tarefa.tolist(), ano): i for i, tarefa in enumerate(lista_de_tarefas) if tarefa.size > 0}
             
-            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Processando Detalhes de Pacatuba {ano}"):
+            for future in as_completed(futures):
                 if resultado_parcial := future.result(): dados_finais.extend(resultado_parcial)
 
         # --- SALVAR RESULTADOS ---

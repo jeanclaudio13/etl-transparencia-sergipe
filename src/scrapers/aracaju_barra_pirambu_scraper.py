@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 
 import pandas as pd
-from tqdm import tqdm
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
@@ -164,7 +164,7 @@ def extrair_dados_pagina_aracaju(driver, dados_coletados_mes):
             logger.error(f"Erro ao contar linhas principais: {e_count}")
             return
 
-        for i in tqdm(range(num_linhas_principais), desc="Processando linhas da página", leave=False):
+        for i in range(num_linhas_principais):
             dados_linha = {}
             try:
                 current_row_xpath = f"({xpath_base_linhas_principais})[{i+1}]"
@@ -395,7 +395,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
             )
             futures = [executor.submit(func_com_args, *tarefa) for tarefa in tarefas] # * crucial para desempacotar atupla (ano, mes)
             
-            for future in tqdm(as_completed(futures), total=len(tarefas), desc=f"Processando Meses de {cidade_nome.capitalize()} {ano}"):
+            for future in as_completed(futures):
                 try:
                     future.result()
                 except Exception as e:
