@@ -146,168 +146,105 @@ def ir_para_proxima_pagina_aracaju(driver, tentativas_maximas=3):
 
     return False
 
-def extrair_dados_pagina_aracaju(driver, dados_coletados_mes):
+def _processar_linha_aracaju(driver, indice_linha: int, xpath_base: str, dados_coletados_mes: list) -> bool:
+    """
+    Função auxiliar que processa uma ÚNICA linha da tabela de Aracaju.
+    Retorna True em caso de sucesso, False em caso de falha.
+    """
     logger = logging.getLogger('exdrop_osr')
-    logger.info("Executando extração da página...")
+    current_row_xpath = f"({xpath_base})[{indice_linha + 1}]"
     
     try:
-        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "dataTables-Pagamentos")))
-        xpath_base_linhas_principais = "//table[@id='dataTables-Pagamentos']/tbody/tr[@role='row'][contains(@class, 'odd') or contains(@class, 'even')]"
+        # Etapa 1: Localiza a linha principal e abre os detalhes se necessário
+        linha_principal = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, current_row_xpath)))
         
-        try:
-            num_linhas_principais = len(driver.find_elements(By.XPATH, xpath_base_linhas_principais))
-            if num_linhas_principais == 0:
-                logger.info("Nenhuma linha de dados encontrada nesta página.")
-                return
-            logger.info(f"Encontradas {num_linhas_principais} linhas para processar.")
-        except Exception as e_count:
-            logger.error(f"Erro ao contar linhas principais: {e_count}")
-            return
+        if "shown" not in linha_principal.get_attribute("class"):
+            btn_detalhes = linha_principal.find_element(By.XPATH, "./td[1][contains(@class, 'details-control')]")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_detalhes)
+            time.sleep(0.3)
+            btn_detalhes.click()
+            WebDriverWait(driver, 20).until(lambda d: "shown" in d.find_element(By.XPATH, current_row_xpath).get_attribute("class"))
 
-        for i in range(num_linhas_principais):
-            dados_linha = {}
+        # Etapa 2: Extrai os dados dos detalhes
+        details_wrapper_xpath = f"{current_row_xpath}/following-sibling::tr[1]"
+        linha_detalhes_container = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, details_wrapper_xpath)))
+        
+        dados_detalhes_preview = {}
+        fonte_recurso_valor = None
+
+        tabela_detalhes = linha_detalhes_container.find_element(By.XPATH, ".//div[@class='table-responsive']/table")
+        for linha_det in tabela_detalhes.find_elements(By.XPATH, "./tbody/tr"):
             try:
-                current_row_xpath = f"({xpath_base_linhas_principais})[{i+1}]"
-                
-                # Etapa 0: Localizar a linha principal da iteração atual
-                linha_principal_element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, current_row_xpath)))
-
-                # Etapa 1: Abre os detalhes da linha
-                if "shown" not in linha_principal_element.get_attribute("class"):
-                    btn_detalhes = linha_principal_element.find_element(By.XPATH, "./td[1][contains(@class, 'details-control')]")
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", btn_detalhes)
-                    time.sleep(0.3)
-                    btn_detalhes.click()
-                    WebDriverWait(driver, 20).until(lambda d: "shown" in d.find_element(By.XPATH, current_row_xpath).get_attribute("class"))
-
-                    # Extrai a fonte de recurso da linha de detalhes
-                    details_wrapper_xpath = f"{current_row_xpath}/following-sibling::tr[1]"
-                    
-                    linha_detalhes_container = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, details_wrapper_xpath)))
-                    
-                    # Etapa 2: Extrair APENAS "Fonte de Recurso" dos detalhes
-                    fonte_recurso_valor = None
-                    dados_detalhes_preview = {} # Para armazenar temporariamente todos os detalhes lidos na primeira passada
-
-                    logger.debug(f"Linha {i}: Re-confirmando linha principal '{current_row_xpath}' para ler detalhes.")
-                    linha_principal_refrescada_para_leitura = WebDriverWait(driver, 7).until(
-                        EC.visibility_of_element_located((By.XPATH, current_row_xpath))
-                    )
-                    
-                    
-                    xpath_relativo_container_detalhes = "./following-sibling::tr[1]"
-                    linha_detalhes_container = WebDriverWait(linha_principal_refrescada_para_leitura, 10).until(
-                        EC.visibility_of_element_located((By.XPATH, xpath_relativo_container_detalhes))
-                    )
-                    
-                    tabela_detalhes_interna = linha_detalhes_container.find_element(By.XPATH, ".//div[@class='table-responsive']/table")
-                    linhas_da_tabela_detalhes = tabela_detalhes_interna.find_elements(By.XPATH, "./tbody/tr")
-
-                    for linha_det_interna in linhas_da_tabela_detalhes:
-                        try:
-                            chave_el = linha_det_interna.find_element(By.XPATH, "./th")
-                            valor_el = linha_det_interna.find_element(By.XPATH, "./td")
-                            chave_bruta = chave_el.text.strip()
-                            chave_limpa = chave_bruta.replace(":", "").replace(u'\xa0', ' ').strip()
-                            valor_limpo = valor_el.text.strip()
-                            chave_norm = normalizar(chave_limpa).replace(" ", "_")
-                            
-                            if chave_norm: # Armazena todos os detalhes lidos nesta primeira passada
-                                dados_detalhes_preview[chave_norm] = valor_limpo
-                            
-                            if chave_norm == "fonte_de_recurso":
-                                fonte_recurso_valor = valor_limpo
-                                logger.debug(f"Linha {i}: 'Fonte de Recurso' encontrada: '{fonte_recurso_valor}'")
-                                # Não damos break aqui, lemos todos os detalhes uma vez.
-                        except NoSuchElementException:
-                            continue # Pula linhas de detalhe malformadas
-                        except Exception as e_det_item:
-                            logger.warning(f"Linha {i}: Erro ao ler item de detalhe ({chave_bruta if 'chave_bruta' in locals() else 'N/A'}): {e_det_item}")
-
-                    logger.debug(f"Linha {i}: Detalhes da tabela interna lidos. 'Fonte de Recurso': '{fonte_recurso_valor}'")
-
-                    # Extrair Histórico Empenho (relativo a linha_detalhes_container)
-                    try:
-                        hist_empenho_el = linha_detalhes_container.find_element(By.XPATH, ".//div[contains(@class, 'panel-heading') and normalize-space(.)='Histórico Empenho']/following-sibling::div[contains(@class, 'panel-body')]/p")
-                        dados_detalhes_preview['historico_empenho'] = hist_empenho_el.text.strip()
-                        logger.debug(f"Linha {i}: Histórico Empenho: '{dados_detalhes_preview['historico_empenho']}'")
-                    except NoSuchElementException: logger.debug(f"Linha {i}: Histórico Empenho não encontrado.")
-                    except Exception as e_he: logger.warning(f"Linha {i}: Erro ao extrair Histórico Empenho: {e_he}")
-
-                    # Extrair Histórico Pagamento (relativo a linha_detalhes_container)
-                    try:
-                        hist_pagamento_el = linha_detalhes_container.find_element(By.XPATH, ".//div[contains(@class, 'panel-heading') and normalize-space(.)='Histórico Pagamento']/following-sibling::div[contains(@class, 'panel-body')]/p")
-                        dados_detalhes_preview['historico_pagamento'] = hist_pagamento_el.text.strip()
-                        logger.debug(f"Linha {i}: Histórico Pagamento: '{dados_detalhes_preview['historico_pagamento']}'")
-                    except NoSuchElementException: logger.debug(f"Linha {i}: Histórico Pagamento não encontrado.")
-                    except Exception as e_hp: logger.warning(f"Linha {i}: Erro ao extrair Histórico Pagamento: {e_hp}")
-
-
-                    if not fonte_recurso_valor and dados_detalhes_preview: # Se lemos detalhes mas não achamos a fonte
-                        logger.warning(f"Linha {i}: 'Fonte de Recurso' não encontrada nos detalhes, embora detalhes tenham sido lidos.")
-
-                    
-                    # Etapa 3: Verificar se é Royalties
-                    is_royalty_related = False
-                    if fonte_recurso_valor:
-                        fonte_norm_check = normalizar(fonte_recurso_valor)
-                        if any(termo in fonte_norm_check for termo in TERMOS_ROYALTIES ):
-                            is_royalty_related = True
-                                              
-                    
-                    # Etapa 4: Se for Royalties, extrair dados da linha principal e combinar
-                    if is_royalty_related:
-                        logger.info(f"Linha {i}: Royalties detectados (Fonte: '{fonte_recurso_valor}'). Extraindo dados completos.")
-                        dados_linha = {} # Inicia o dicionário para esta linha
-                        
-                        # Re-localizar linha_principal_element para garantir que está fresco antes de pegar suas células
-                        linha_principal_element = WebDriverWait(driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, current_row_xpath))
-                        )
-                        celulas_lp = linha_principal_element.find_elements(By.XPATH, "./td")
-                        if len(celulas_lp) > 10:
-                            dados_linha['orgao'] = celulas_lp[1].text
-                            dados_linha['unidade'] = celulas_lp[2].text
-                            dados_linha['data'] = celulas_lp[3].text
-                            dados_linha['empenho'] = celulas_lp[4].text
-                            dados_linha['processo'] = celulas_lp[5].text
-                            dados_linha['credor'] = celulas_lp[6].text
-                            dados_linha['cpf_cnpj'] = celulas_lp[7].text
-                            dados_linha['pago'] = celulas_lp[8].text
-                            dados_linha['retido'] = celulas_lp[9].text
-                            dados_linha['anulacao'] = celulas_lp[10].text
-                        else:
-                            logger.error(f"Linha {i}: Falha ao re-ler células da linha principal para item de royalty. Pulando item.")
-                            # Ir para a lógica de fechar detalhes e continuar
-                            details_opened_successfully = True # Força a tentativa de fechar
-                            is_royalty_related = False # Evita adicionar dados incompletos
-                            # Pula para o bloco finally da linha para fechar os detalhes
-
-                        # Adicionar os detalhes já lidos (dados_detalhes_preview)
-                        dados_linha.update(dados_detalhes_preview)
-                        # Adiciona o dicionário completo à lista que foi passada como parâmetro
-                        dados_coletados_mes.append(dados_linha)             
-                   
-            except StaleElementReferenceException as sere:
-                logger.error(f"Linha {i}: StaleElementReferenceException DURANTE o processamento - {str(sere)}. Pulando linha.")
-                continue # Pula para a próxima linha no loop 'for i'
-            except TimeoutException as te:
-                logger.error(f"Linha {i}: TimeoutException DURANTE o processamento - {str(te)}. Pulando linha.")
+                chave = linha_det.find_element(By.XPATH, "./th").text.strip().replace(":", "")
+                valor = linha_det.find_element(By.XPATH, "./td").text.strip()
+                chave_norm = normalizar(chave).replace(" ", "_")
+                if chave_norm:
+                    dados_detalhes_preview[chave_norm] = valor
+                    if chave_norm == "fonte_de_recurso":
+                        fonte_recurso_valor = valor
+            except NoSuchElementException:
                 continue
-            except Exception as e_linha_proc:
-                logger.error(f"Linha {i}: Erro INESPERADO DURANTE o processamento - {str(e_linha_proc)}. Pulando linha.")
-                continue    
-                
-                # Fecha os detalhes para processar a próxima linha
-                # if "shown" in linha_principal_element.get_attribute("class"):
-                #     btn_detalhes.click()
-                #     WebDriverWait(driver, 10).until(lambda d: "shown" not in d.find_element(By.XPATH, current_row_xpath).get_attribute("class"))
 
-            except Exception as e_linha:
-                logger.error(f"Erro ao processar a linha {i+1} da página. Erro: {e_linha}")
-                continue
-    except Exception as e_geral:
-        logger.critical(f"Erro fatal na extração da página: {e_geral}")
+        # Etapa 3: Verifica se é de royalties
+        if fonte_recurso_valor and any(termo in normalizar(fonte_recurso_valor) for termo in TERMOS_ROYALTIES):
+            logger.info(f"Linha {indice_linha + 1}: Royalties detectados. Coletando dados completos.")
+            linha_principal = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, current_row_xpath)))
+            celulas = linha_principal.find_elements(By.XPATH, "./td")
+            
+            dados_linha = {
+                'orgao': celulas[1].text, 'unidade': celulas[2].text, 'data': celulas[3].text,
+                'empenho': celulas[4].text, 'processo': celulas[5].text, 'credor': celulas[6].text,
+                'cpf_cnpj': celulas[7].text, 'pago': celulas[8].text, 'retido': celulas[9].text,
+                'anulacao': celulas[10].text
+            }
+            dados_linha.update(dados_detalhes_preview)
+            dados_coletados_mes.append(dados_linha)
+        
+        # Etapa 4: Fecha os detalhes (importante para não sobrecarregar a página)
+        linha_principal = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, current_row_xpath)))
+        if "shown" in linha_principal.get_attribute("class"):
+            btn_detalhes = linha_principal.find_element(By.XPATH, "./td[1][contains(@class, 'details-control')]")
+            btn_detalhes.click()
+            WebDriverWait(driver, 10).until(lambda d: "shown" not in d.find_element(By.XPATH, current_row_xpath).get_attribute("class"))
+
+        return True # Sucesso
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar a linha {indice_linha + 1}: {e}")
+        return False # Falha
+
+def extrair_dados_pagina_aracaju(driver, dados_coletados_mes: list):
+    logger = logging.getLogger('exdrop_osr')
+    logger.info("Executando extração da página...")
+
+    xpath_base_linhas = "//table[@id='dataTables-Pagamentos']/tbody/tr[@role='row'][contains(@class, 'odd') or contains(@class, 'even')]"
+    try:
+        num_linhas = len(WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath_base_linhas))))
+        if num_linhas == 0:
+            logger.info("Nenhuma linha de dados encontrada nesta página.")
+            return
+        logger.info(f"Encontradas {num_linhas} linhas para processar.")
+    except TimeoutException:
+        logger.info("Tabela de dados não encontrada ou vazia nesta página.")
+        return
+
+    linhas_para_retentativa = []
+
+    # --- PRIMEIRA PASSAGEM ---
+    logger.info("Iniciando primeira passagem pelas linhas da página...")
+    for i in range(num_linhas):
+        sucesso = _processar_linha_aracaju(driver, i, xpath_base_linhas, dados_coletados_mes)
+        if not sucesso:
+            linhas_para_retentativa.append(i) # Guarda o índice da linha que falhou
+    
+    # --- SEGUNDA PASSAGEM (APENAS NAS LINHAS QUE FALHARAM) ---
+    if linhas_para_retentativa:
+        logger.info(f"Iniciando segunda passagem para {len(linhas_para_retentativa)} linha(s) que falharam...")
+        time.sleep(2) # Pausa estratégica antes de tentar novamente
+
+        for i in linhas_para_retentativa:
+            logger.info(f"Retentativa na linha {i+1}...")
+            _processar_linha_aracaju(driver, i, xpath_base_linhas, dados_coletados_mes)
 
 
 

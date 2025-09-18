@@ -1,13 +1,15 @@
 {
   "anos_para_processar": [
-    "2023"
+    "2025"
   ],
   "prefeituras_para_processar": [
-    "pacatuba"
+    "aracaju"
   ],
-  "meses_para_processar": null,
+  "meses_para_processar": [
+    "06"
+  ],
   "configuracoes_paralelismo": {
-    "max_workers": 3
+    "max_workers": 2
   },
   "configuracoes_cidades": {
     "aracaju": {

@@ -316,7 +316,54 @@ def worker_extrair_detalhes_pacatuba(links: List[str], ano_alvo: str, driver_pat
     
     return dados_coletados_pela_thread
 
-def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processar: List[str],max_workers: int, headless:bool):
+def coletar_links_lote(cidade_config: dict, ano: str, pagina_inicial: int, paginas_por_lote: int, driver_path: str, headless: bool) -> tuple[list[str], bool]:
+    """
+    Função que abre navegador, coleta links de um lote de páginas e fecha o navegador.
+    Retorna a lista de links encontrados e um booleano indicando se há mais páginas.
+    """
+    logger = logging.getLogger('exdrop_osr')
+    links_do_lote = []
+    driver = None
+    ainda_ha_paginas = True
+    
+    try:
+        driver = start_driver_pacatuba(headless=headless, executable_path=driver_path)
+        
+        # Constrói a URL para ir diretamente para a página inicial do lote
+        url_base = cidade_config['url']
+        url_lote = f"{url_base}?pagina={pagina_inicial}&alias=pmpacatuba&p=iDespesa&base=189&recursoDESO=false&ano={ano}&tipo=pagamento&filtro=1"
+        driver.get(url_lote)
+        
+        # A navegação direta via URL evita a necessidade de clicar nos filtros novamente
+        
+        for i in range(paginas_por_lote):
+            pagina_atual = pagina_inicial + i
+            logger.info(f"Coletando links da página: {pagina_atual}")
+            
+            try:
+                # Aguarda a tabela aparecer antes de tentar extrair
+                WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
+                botoes_detalhes = driver.find_elements(By.XPATH, "//td[@serigyitem='detalhesPagamento']/a")
+                for botao in botoes_detalhes:
+                    if link := botao.get_attribute('href'):
+                        links_do_lote.append(link)
+                        
+                if not ir_para_proxima_pagina_pacatuba(driver):
+                    ainda_ha_paginas = False
+                    break # Fim da paginação, sai do loop do lote
+            except TimeoutException:
+                logger.warning(f"Timeout ao carregar a pagina {pagina_atual}. Assumindo fim da paginação para este lote.")
+                ainda_ha_paginas = False
+                break
+    finally:
+        if driver:
+            driver.quit()
+            logger.info("Navegador do lote de coleta de links foi fechado.")  
+            
+    return links_do_lote, ainda_ha_paginas
+        
+
+def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processar: List[str] | None, max_workers: int, headless:bool):
     """
     Ponto de entrada para o scraper de Pacatuba.
     Decide entre a extração anual (coleta de links em massa) ou mensal
@@ -352,67 +399,33 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
                     future.result() # Apenas para capturar exceções
             
             # Consolida os arquivos mensais gerados
-            unir_csvs_por_ano(cidade_nome=cidade_nome, ano=ano)
-
+            unir_csvs_por_ano(cidade_nome=cidade_nome, ano=ano)  
+        
         else:
-            # MODO ANUAL: Coleta todos os links do ano e paraleliza a extração
-            logger.info("Modo de extração ANUAL selecionado.")
-        
-        
-        
-        
-        
-        
-        
-        # --- FASE 1: COLETA DE TODOS OS LINKS NA THREAD PRINCIPAL ---
-        links_para_processar = []
-        driver = None
-        try:
-            logger.info("Fase 1: Coletando todos os links de detalhes...")
-            driver = start_driver_pacatuba(headless=headless)
-            driver.get("https://transparencia.pacatuba.se.gov.br/public/portal/despesas")
-            
-            # Lidando com pop-up dos cookies
-            try:
-                # Espera até 10 segundos para o botão de rejeitar cookies aparecer e ser clicável
-                logger.info("Procurando por banner de cookies para rejeitar...")
-                
-                botao_rejeitar_cookies = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.ID, "rejectCookie"))
-                )
-                
-                # Clica no botão para fechar o banner
-                botao_rejeitar_cookies.click()
-                logger.info("Banner de cookies rejeitado com sucesso.")
-                
-                # Adiciona uma pequena pausa para a animação do banner desaparecer
-                time.sleep(1)
-
-            except TimeoutException:
-                # Se o botão não aparecer em 10 segundos, assume que não há banner
-                logger.info("Nenhum banner de cookies encontrado para interagir.")
-                pass
-            
-            selecionar_dropdown_pacatuba(driver, "select2-tipo-container", "Pagamento")
-            selecionar_dropdown_pacatuba(driver, "select2-ano-container", ano)
-            
-            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button#filtrar.btn-buscar"))).click()
-            WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//table/tbody")))
-            
+            # --- FASE 1: COLETA DE LINKS EM LOTES (MODO ANUAL) ---
+            logger.info("Modo de extração ANUAL selecionado. Iniciando coleta de links em lotes.")
+            links_para_processar = []
             pagina_atual = 1
-            while True:
-                logger.info(f"Coletando links da página: {pagina_atual}")
-                botoes_detalhes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//td[@serigyitem='detalhesPagamento']/a")))
-                for botao in botoes_detalhes:
-                    if link := botao.get_attribute('href'): links_para_processar.append(link)
-                
-                if not ir_para_proxima_pagina_pacatuba(driver): break
-                pagina_atual += 1
-        finally:
-            if driver: driver.quit()
+            paginas_por_lote = 5 # Define o tamanho do lote. Ajustar se necessário.
 
-        logger.info(f"Fase 1 concluída. {len(links_para_processar)} links coletados.")
-        if not links_para_processar: continue
+            while True:
+                logger.info(f"Iniciando coleta de lote a partir da página {pagina_atual}...")
+                novos_links, tem_mais_paginas = coletar_links_lote(
+                    cidade_config, ano, pagina_atual, paginas_por_lote, driver_path, headless
+                )
+                if novos_links:
+                    links_para_processar.extend(novos_links)
+                    logger.info(f"{len(novos_links)} links adicionados. Total até agora: {len(links_para_processar)}.")
+                
+                if not tem_mais_paginas:
+                    logger.info("Fim da coleta de links detectado.")
+                    break
+                
+                pagina_atual += paginas_por_lote
+
+            logger.info(f"Fase 1 concluída. Total de {len(links_para_processar)} links coletados para o ano de {ano}.")
+            if not links_para_processar:
+                continue
 
         # --- FASE 2: DISTRIBUIÇÃO E PROCESSAMENTO PARALELO ---
         logger.info(f"Fase 2: Iniciando extração com {max_workers} workers.")
