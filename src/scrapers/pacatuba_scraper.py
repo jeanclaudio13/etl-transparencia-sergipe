@@ -438,9 +438,15 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
             func_com_args = partial(worker_extrair_detalhes_pacatuba, driver_path=driver_path, headless=headless)
             futures = {executor.submit(func_com_args, tarefa.tolist(), ano): i for i, tarefa in enumerate(lista_de_tarefas) if tarefa.size > 0}
             
+            # Lógica de log de progresso
+            lotes_concluidos = 0
+            total_lotes = len(futures)
+            
             for future in as_completed(futures):
                 if resultado_parcial := future.result(): dados_finais.extend(resultado_parcial)
 
+            lotes_concluidos =+ 1
+            logger.info(f"[PROGRESSO] Lote {lotes_concluidos} de {total_lotes} concluído")
         # --- SALVAR RESULTADOS ---
         if dados_finais:
             output_dir = os.path.join("data", "processed", "pacatuba")

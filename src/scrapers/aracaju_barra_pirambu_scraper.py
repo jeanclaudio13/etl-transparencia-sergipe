@@ -159,7 +159,12 @@ def _processar_linha_aracaju(driver, indice_linha: int, xpath_base: str, dados_c
         linha_principal = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, current_row_xpath)))
         
         if "shown" not in linha_principal.get_attribute("class"):
-            btn_detalhes = linha_principal.find_element(By.XPATH, "./td[1][contains(@class, 'details-control')]")
+            btn_detalhes_locator = linha_principal.find_element(By.XPATH, "./td[1][contains(@class, 'details-control')]")
+            
+            btn_detalhes = WebDriverWait(linha_principal, 15).until(
+                EC.element_to_be_clickable(btn_detalhes_locator)
+            )
+            
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn_detalhes)
             time.sleep(0.3)
             btn_detalhes.click()
