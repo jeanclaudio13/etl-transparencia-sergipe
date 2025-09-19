@@ -82,7 +82,7 @@ Este modo executa o robô em "headless" (sem interface gráfica), lendo a config
     ```
 
     ## 📂 Estrutura do Projeto
-
+```
 .
 ├── data/
 │   ├── processed/      # Onde os arquivos CSV finais são salvos
@@ -98,6 +98,7 @@ Este modo executa o robô em "headless" (sem interface gráfica), lendo a config
 ├── interface.py        # Código da interface com Streamlit
 ├── main.py             # Ponto de entrada principal do robô
 └── requirements.txt    # Lista de dependências Python
+```
 
 ## ⚙️ Configuração
 
@@ -146,13 +147,47 @@ Para execuções automatizadas em servidor (`Modo 2`), a configuração é lida 
     }
   }
 }
+```
 
-- anos_para_processar: Lista de anos para os quais o robô irá rodar.
+* anos_para_processar: Lista de anos para os quais o robô irá rodar.
 
-- prefeituras_para_processar: Lista das chaves das cidades que serão processadas.
+* prefeituras_para_processar: Lista das chaves das cidades que serão processadas.
 
-- meses_para_processar (Opcional): Se presente, o robô processará apenas os meses listados para as cidades compatíveis. Se ausente ou null, processará o ano inteiro.
+* meses_para_processar (Opcional): Se presente, o robô processará apenas os meses listados para as cidades compatíveis. Se ausente ou null, processará o ano inteiro.
 
-- max_workers: Número de tarefas paralelas (navegadores) a serem executadas ao mesmo tempo.
+* max_workers: Número de tarefas paralelas (navegadores) a serem executadas ao mesmo tempo.
 
-- configuracoes_cidades: Dicionário com as configurações específicas de cada portal, como a URL e o módulo scraper a ser utilizado.
+* configuracoes_cidades: Dicionário com as configurações específicas de cada portal, como a URL e o módulo scraper a ser utilizado.
+
+
+## 📦 Manutenção e Atualização das Imagens
+
+Para garantir que a aplicação continue segura e estável, é recomendado reconstruir as imagens Docker periodicamente (a cada 1-2 meses) para incorporar as últimas atualizações de segurança da imagem base e das dependências.
+
+O processo consiste em dois passos:
+
+### 1. Atualizar a Imagem Base
+
+Primeiro, garanta que você tenha a versão mais recente da imagem oficial do Python que usamos como base:
+
+```bash
+docker pull python:3.11-slim
+```
+
+### 2. Reconstruir as Imagens da Aplicação sem Cache
+Em seguida, reconstrua as suas imagens `extrator-ui` e extrator-sergipe usando a flag --no-cache. Isso força o Docker a executar todos os passos do zero, incluindo o apt-get upgrade, garantindo que as últimas atualizações sejam aplicadas.
+
+Para a imagem da Interface:
+
+```bash
+
+docker build --no-cache -t `extrator-ui` -f Dockerfile.ui .
+```
+
+Para a imagem do Scraper (automação):
+
+```bash
+
+docker build --no-cache -t extrator-sergipe -f Dockerfile.scraper .
+```
+
