@@ -83,21 +83,36 @@ Este modo executa o robô em "headless" (sem interface gráfica), lendo a config
 
     ## 📂 Estrutura do Projeto
 ```
-.
-├── data/
-│   ├── processed/      # Onde os arquivos CSV finais são salvos
-│   └── raw/            # (Opcional) Para dados brutos, se necessário
-├── logs/               # Arquivos de log detalhados da execução
-├── src/
-│   ├── common/         # Módulos compartilhados (ex: logger)
-│   └── scrapers/       # Cada scraper em seu próprio arquivo .py
-├── .gitignore
-├── config.json         # Arquivo principal de configuração
-├── Dockerfile.scraper  # Dockerfile para o robô de automação
-├── Dockerfile.ui       # Dockerfile para a interface gráfica
-├── interface.py        # Código da interface com Streamlit
-├── main.py             # Ponto de entrada principal do robô
-└── requirements.txt    # Lista de dependências Python
+etl-transparencia-sergipe
+├─ .editorconfig
+├─ config.json
+├─ Dockerfile.scraper
+├─ Dockerfile.ui
+├─ docs
+│  └─ notebooks
+│     ├─ data_science.ipynb
+│     ├─ OSR_aracaju_barra__pirambu.ipynb
+│     ├─ OSR_pacatuba.ipynb
+│     └─ teste_selenium.ipynb
+├─ estrutura_do_projeto.txt
+├─ interface.py
+├─ LICENSE
+├─ main.py
+├─ metricas_radon.md
+├─ README.md
+├─ requirements.in
+├─ requirements.txt
+└─ src
+   ├─ common
+   │  ├─ file_utils.py
+   │  ├─ logging_setup.py
+   │  └─ __init__.py
+   ├─ scrapers
+   │  ├─ aracaju_barra_pirambu_scraper.py
+   │  ├─ pacatuba_scraper.py
+   │  └─ __init__.py
+   └─ __init__.py
+
 ```
 
 ## ⚙️ Configuração
@@ -190,4 +205,5 @@ Para a imagem do Scraper (automação):
 
 docker build --no-cache -t extrator-sergipe -f Dockerfile.scraper .
 ```
+
 
