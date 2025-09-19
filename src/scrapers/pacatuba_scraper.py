@@ -406,7 +406,7 @@ def run(cidade_config: dict, anos_para_processar: List[str], meses_para_processa
             logger.info("Modo de extração ANUAL selecionado. Iniciando coleta de links em lotes.")
             links_para_processar = []
             pagina_atual = 1
-            paginas_por_lote = 5 # Define o tamanho do lote. Ajustar se necessário.
+            paginas_por_lote = 50 # Define o tamanho do lote. Ajustar se necessário.
 
             while True:
                 logger.info(f"Iniciando coleta de lote a partir da página {pagina_atual}...")
